@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOYAGER · FLOR FINAL</title>
+    <title>VOYAGER · BOTONES TÁCTILES</title>
     <style>
         * {
             margin: 0;
@@ -32,6 +32,7 @@
             left: 0;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+            z-index: 1;
         }
 
         #startBtn {
@@ -62,7 +63,7 @@
 
         #progreso {
             position: absolute;
-            bottom: 8px;
+            bottom: 80px;
             right: 8px;
             color: #4afcff;
             font-family: 'Courier New', monospace;
@@ -75,7 +76,7 @@
             text-shadow: 0 0 5px #1a7a9a;
         }
 
-        #controles {
+        #controles-pc {
             position: absolute;
             bottom: 30px;
             left: 0;
@@ -95,7 +96,7 @@
             backdrop-filter: blur(2px);
         }
 
-        #instruccion {
+        #instruccion-pc {
             position: absolute;
             top: 20px;
             right: 20px;
@@ -114,17 +115,78 @@
             backdrop-filter: blur(2px);
         }
 
-        .flecha-container {
+        /* ===== BOTONES TÁCTILES (SOLO VISIBLES EN MÓVIL) ===== */
+        .touch-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: center;
-            gap: 40px;
-            margin-top: 8px;
+            gap: 15px;
+            padding: 10px;
+            z-index: 200;
+            pointer-events: none; /* Los contenedores no bloquean, los botones sí */
         }
 
-        .flecha {
+        .touch-btn {
+            pointer-events: auto;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(74, 252, 255, 0.3);
+            border-radius: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', monospace;
             font-size: 24px;
-            color: #4afcff;
-            text-shadow: 0 0 10px #1a7a9a;
+            font-weight: bold;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .touch-btn:active {
+            background: rgba(74, 252, 255, 0.3);
+            border-color: #4afcff;
+            color: white;
+            transform: scale(0.95);
+        }
+
+        .touch-btn small {
+            font-size: 10px;
+            margin-top: 2px;
+            opacity: 0.8;
+        }
+
+        .btn-pair {
+            display: flex;
+            gap: 10px;
+            background: transparent;
+        }
+
+        .btn-pair-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Ocultar botones en PC */
+        @media (min-width: 769px) {
+            .touch-controls {
+                display: none;
+            }
+        }
+
+        /* Mostrar instrucciones de PC solo en PC */
+        @media (min-width: 769px) {
+            #controles-pc, #instruccion-pc {
+                display: block;
+            }
         }
 
         @keyframes parpadeo {
@@ -138,19 +200,24 @@
                 padding: 12px 24px;
                 font-size: 14px;
             }
-            #controles {
-                font-size: 12px;
-                padding: 10px;
+            #progreso {
+                bottom: 100px;
             }
-            #instruccion {
-                font-size: 13px;
-                padding: 10px;
-                top: 10px;
-                right: 10px;
-                left: 10px;
+            .touch-btn {
+                width: 65px;
+                height: 65px;
+                font-size: 22px;
             }
-            .flecha {
+        }
+
+        @media (max-width: 480px) {
+            .touch-btn {
+                width: 60px;
+                height: 60px;
                 font-size: 20px;
+            }
+            .touch-btn small {
+                font-size: 8px;
             }
         }
     </style>
@@ -158,29 +225,54 @@
 <body>
     <button id="startBtn">⌧ INICIAR TRANSMISIÓN ⌧</button>
     <div id="progreso">◉ 0%</div>
-    <div id="controles">⬅️ ➡️ VIAJE · ⬆️ ⬇️ POEMA · TÁCTIL: DESLIZA</div>
-    <div id="instruccion">
-        <div>✨ CONTROLES ✨</div>
-        <div class="flecha-container">
-            <span class="flecha">⬅️ ➡️</span>
-            <span class="flecha">⬆️ ⬇️</span>
+    
+    <!-- INSTRUCCIONES PARA PC (solo visibles en PC) -->
+    <div id="controles-pc">⬅️ ➡️ VIAJE · ⬆️ ⬇️ POEMA</div>
+    <div id="instruccion-pc">
+        <div>✨ CONTROLES PC ✨</div>
+        <div style="font-size: 20px; margin: 5px 0;">⬅️ ➡️ ⬆️ ⬇️</div>
+        <div>FLECHAS DEL TECLADO</div>
+    </div>
+
+    <!-- BOTONES TÁCTILES (solo visibles en móvil) -->
+    <div class="touch-controls">
+        <!-- Botones para ANIMACIÓN (izquierda/derecha) -->
+        <div class="btn-pair">
+            <div class="touch-btn" id="btn-anim-left">
+                ◀
+                <small>viaje</small>
+            </div>
+            <div class="touch-btn" id="btn-anim-right">
+                ▶
+                <small>viaje</small>
+            </div>
         </div>
-        <div>HORIZONTAL = VIAJE · VERTICAL = POEMA</div>
-        <div style="font-size: 10px; margin-top: 5px;">(TECLADO O DESLIZA)</div>
+        
+        <!-- Botones para POEMA (arriba/abajo) -->
+        <div class="btn-pair-vertical">
+            <div class="touch-btn" id="btn-poem-up">
+                ▲
+                <small>poema</small>
+            </div>
+            <div class="touch-btn" id="btn-poem-down">
+                ▼
+                <small>poema</small>
+            </div>
+        </div>
     </div>
 
     <canvas id="canvas"></canvas>
 
     <script>
         // ====================================================
-        // VOYAGER · FLOR FINAL CORREGIDA
+        // VOYAGER · BOTONES TÁCTILES
         // ====================================================
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const startBtn = document.getElementById('startBtn');
         const progresoDiv = document.getElementById('progreso');
-        const controlesDiv = document.getElementById('controles');
-        const instruccionDiv = document.getElementById('instruccion');
+        const controlesPC = document.getElementById('controles-pc');
+        const instruccionPC = document.getElementById('instruccion-pc');
         
         ctx.imageSmoothingEnabled = false;
         
@@ -206,15 +298,6 @@
         let teclaIzquierda = false;
         let teclaDerecha = false;
         let velocidadTeclado = 0;
-        
-        // Control táctil
-        let tocando = false;
-        let ultimaX = null;
-        let ultimaY = null;
-        let movimientoInicialX = 0;
-        let movimientoInicialY = 0;
-        let modoMovimiento = null;
-        const UMBRAL_DIRECCION = 10;
         
         // Vibración
         const vibrar = (p) => window.navigator?.vibrate?.(p);
@@ -455,16 +538,14 @@
         }
         
         // ====================================================
-        // DIBUJAR ESTRELLAS CON FLOR (CORREGIDO)
+        // DIBUJAR ESTRELLAS CON FLOR
         // ====================================================
         function dibujarEstrellas() {
-            const esFinal = progresoAnimacion > 0.8; // Antes era 0.85, ahora 0.8 para que se vea más fácil
+            const esFinal = progresoAnimacion > 0.8;
             const factorFlor = esFinal ? Math.min(1, (progresoAnimacion - 0.8) * 8) : 0;
             
-            // Dibujar todas las estrellas
             for (let estrella of estrellas) {
                 if (factorFlor < 0.1) {
-                    // MODO VIAJE: estrellas moviéndose
                     const velocidadEstrella = estrella.z * 0.8;
                     const desplazamientoBase = (progresoAnimacion * 2000 * velocidadEstrella) % width;
                     
@@ -487,7 +568,6 @@
                     }
                 }
                 
-                // MODO FLOR: transición
                 if (factorFlor > 0) {
                     const xActual = width * estrella.x;
                     const yActual = height * estrella.y;
@@ -495,14 +575,11 @@
                     const xFlor = width * estrella.florX;
                     const yFlor = height * estrella.florY;
                     
-                    // Interpolar entre posición actual y posición de flor
                     let x = xActual * (1 - factorFlor) + xFlor * factorFlor;
                     let y = yActual * (1 - factorFlor) + yFlor * factorFlor;
                     
-                    // Colores de la flor
                     let color;
                     if (factorFlor > 0.7) {
-                        // Pétalos: tonos cálidos
                         if (Math.random() > 0.7) color = '#ffd700';
                         else if (Math.random() > 0.5) color = '#ffaaff';
                         else color = '#ffffff';
@@ -518,7 +595,7 @@
                 }
             }
             
-            // TEXTO "ich liebe dich" (más grande y visible)
+            // Texto "ich liebe dich"
             if (progresoAnimacion > 0.9) {
                 const opacidadTexto = Math.min(1, (progresoAnimacion - 0.9) * 15);
                 ctx.globalAlpha = opacidadTexto;
@@ -568,7 +645,6 @@
                 }
             }
             
-            // Detalles específicos
             switch(tipo) {
                 case 'tierra':
                     ctx.fillStyle = paleta.continente;
@@ -788,73 +864,6 @@
         }
         
         // ====================================================
-        // CONTROLES TÁCTILES
-        // ====================================================
-        function onTouchStart(e) {
-            e.preventDefault();
-            if (!gameActive) return;
-            
-            const touch = e.touches[0];
-            tocando = true;
-            ultimaX = touch.clientX;
-            ultimaY = touch.clientY;
-            movimientoInicialX = touch.clientX;
-            movimientoInicialY = touch.clientY;
-            modoMovimiento = null;
-        }
-        
-        function onTouchMove(e) {
-            e.preventDefault();
-            if (!gameActive || !tocando || ultimaX === null || ultimaY === null) return;
-            
-            const touch = e.touches[0];
-            const xActual = touch.clientX;
-            const yActual = touch.clientY;
-            
-            const deltaX = xActual - ultimaX;
-            const deltaY = yActual - ultimaY;
-            
-            if (modoMovimiento === null) {
-                const diffX = Math.abs(xActual - movimientoInicialX);
-                const diffY = Math.abs(yActual - movimientoInicialY);
-                
-                if (diffX > UMBRAL_DIRECCION || diffY > UMBRAL_DIRECCION) {
-                    if (diffX > diffY) {
-                        modoMovimiento = 'horizontal';
-                    } else {
-                        modoMovimiento = 'vertical';
-                    }
-                }
-            }
-            
-            if (modoMovimiento === 'horizontal') {
-                velocidad = deltaX / width * 15;
-                progresoAnimacionObjetivo += velocidad * 0.0006;
-                progresoAnimacionObjetivo = Math.min(1, Math.max(0, progresoAnimacionObjetivo));
-                ultimaX = xActual;
-            } else if (modoMovimiento === 'vertical') {
-                if (Math.abs(deltaY) > 5) {
-                    if (deltaY < 0 && indicePoema > 0) {
-                        indicePoema--;
-                        vibrar(5);
-                    } else if (deltaY > 0 && indicePoema < TOTAL_LINEAS - 1) {
-                        indicePoema++;
-                        vibrar(5);
-                    }
-                    ultimaY = yActual;
-                }
-            }
-        }
-        
-        function onTouchEnd(e) {
-            e.preventDefault();
-            tocando = false;
-            ultimaX = null;
-            ultimaY = null;
-            modoMovimiento = null;
-        }
-        
-        // ====================================================
         // CONTROLES DE TECLADO
         // ====================================================
         function onKeyDown(e) {
@@ -871,12 +880,12 @@
             } else if (e.key === 'ArrowUp') {
                 if (indicePoema > 0) {
                     indicePoema--;
-                    vibrar(10);
+                    vibrar(5);
                 }
             } else if (e.key === 'ArrowDown') {
                 if (indicePoema < TOTAL_LINEAS - 1) {
                     indicePoema++;
-                    vibrar(10);
+                    vibrar(5);
                 }
             }
         }
@@ -908,6 +917,129 @@
         }
         
         // ====================================================
+        // CONTROLES DE BOTONES TÁCTILES
+        // ====================================================
+        function setupTouchButtons() {
+            const btnLeft = document.getElementById('btn-anim-left');
+            const btnRight = document.getElementById('btn-anim-right');
+            const btnUp = document.getElementById('btn-poem-up');
+            const btnDown = document.getElementById('btn-poem-down');
+            
+            if (!btnLeft || !btnRight || !btnUp || !btnDown) return;
+            
+            // Botones de animación (izquierda/derecha)
+            btnLeft.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameActive) return;
+                teclaIzquierda = true;
+                vibrar(10);
+            });
+            
+            btnLeft.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                teclaIzquierda = false;
+            });
+            
+            btnLeft.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                teclaIzquierda = false;
+            });
+            
+            btnRight.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameActive) return;
+                teclaDerecha = true;
+                vibrar(10);
+            });
+            
+            btnRight.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                teclaDerecha = false;
+            });
+            
+            btnRight.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                teclaDerecha = false;
+            });
+            
+            // Botones de poema (arriba/abajo) - acción inmediata
+            btnUp.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameActive) return;
+                if (indicePoema > 0) {
+                    indicePoema--;
+                    vibrar(5);
+                }
+            });
+            
+            btnDown.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameActive) return;
+                if (indicePoema < TOTAL_LINEAS - 1) {
+                    indicePoema++;
+                    vibrar(5);
+                }
+            });
+            
+            // También soportar click para depuración en PC (aunque no se ven)
+            btnLeft.addEventListener('mousedown', (e) => {
+                if (window.innerWidth > 768) return; // Solo móvil
+                e.preventDefault();
+                if (!gameActive) return;
+                teclaIzquierda = true;
+            });
+            
+            btnLeft.addEventListener('mouseup', (e) => {
+                if (window.innerWidth > 768) return;
+                e.preventDefault();
+                teclaIzquierda = false;
+            });
+            
+            btnLeft.addEventListener('mouseleave', (e) => {
+                if (window.innerWidth > 768) return;
+                teclaIzquierda = false;
+            });
+            
+            btnRight.addEventListener('mousedown', (e) => {
+                if (window.innerWidth > 768) return;
+                e.preventDefault();
+                if (!gameActive) return;
+                teclaDerecha = true;
+            });
+            
+            btnRight.addEventListener('mouseup', (e) => {
+                if (window.innerWidth > 768) return;
+                e.preventDefault();
+                teclaDerecha = false;
+            });
+            
+            btnRight.addEventListener('mouseleave', (e) => {
+                if (window.innerWidth > 768) return;
+                teclaDerecha = false;
+            });
+            
+            btnUp.addEventListener('mousedown', (e) => {
+                if (window.innerWidth > 768) return;
+                e.preventDefault();
+                if (!gameActive) return;
+                if (indicePoema > 0) {
+                    indicePoema--;
+                    vibrar(5);
+                }
+            });
+            
+            btnDown.addEventListener('mousedown', (e) => {
+                if (window.innerWidth > 768) return;
+                e.preventDefault();
+                if (!gameActive) return;
+                if (indicePoema < TOTAL_LINEAS - 1) {
+                    indicePoema++;
+                    vibrar(5);
+                }
+            });
+        }
+        
+        // ====================================================
         // RESIZE
         // ====================================================
         function resizeCanvas() {
@@ -931,7 +1063,7 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, width, height);
             
-            if (!tocando && !teclaDerecha && !teclaIzquierda) {
+            if (!teclaDerecha && !teclaIzquierda) {
                 velocidad *= 0.95;
             }
             
@@ -939,8 +1071,8 @@
             
             progresoAnimacion += (progresoAnimacionObjetivo - progresoAnimacion) * INERCIA;
             
-            if (!tocando && !teclaDerecha && !teclaIzquierda && Math.abs(velocidad) < 0.1) {
-                progresoAnimacionObjetivo += 0.00005; // Aumentado para que llegue más fácil al final
+            if (!teclaDerecha && !teclaIzquierda && Math.abs(velocidad) < 0.1) {
+                progresoAnimacionObjetivo += 0.00005;
                 progresoAnimacionObjetivo = Math.min(1, progresoAnimacionObjetivo);
             }
             
@@ -984,8 +1116,12 @@
             
             startBtn.style.display = 'none';
             progresoDiv.style.display = 'block';
-            controlesDiv.style.display = 'block';
-            instruccionDiv.style.display = 'block';
+            
+            // Mostrar controles según dispositivo
+            if (window.innerWidth > 768) {
+                controlesPC.style.display = 'block';
+                instruccionPC.style.display = 'block';
+            }
             
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen();
@@ -995,9 +1131,8 @@
             resizeCanvas();
             loop();
             
-            setTimeout(() => {
-                instruccionDiv.style.opacity = '0.3';
-            }, 6000);
+            // Configurar botones táctiles
+            setupTouchButtons();
         }
         
         // ====================================================
@@ -1005,17 +1140,13 @@
         // ====================================================
         startBtn.addEventListener('click', iniciar);
         
-        canvas.addEventListener('touchstart', onTouchStart, { passive: false });
-        canvas.addEventListener('touchmove', onTouchMove, { passive: false });
-        canvas.addEventListener('touchend', onTouchEnd);
-        canvas.addEventListener('touchcancel', onTouchEnd);
-        
-        window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('keyup', onKeyUp);
-        
+        // Prevenir scroll en móvil
         document.body.addEventListener('touchmove', (e) => {
             if (gameActive) e.preventDefault();
         }, { passive: false });
+        
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
         
         resizeCanvas();
     </script>
