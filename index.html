@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VOYAGER · POEMA MEJORADO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: black;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+            position: fixed;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #startBtn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 16px 32px;
+            font-size: 16px;
+            letter-spacing: 2px;
+            background: black;
+            color: #4afcff;
+            border: 2px solid #1a7a9a;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 15px #1a5a7a;
+            animation: pulso 2.5s infinite;
+            border-radius: 0;
+            text-shadow: 0 0 5px #4afcff;
+        }
+
+        @keyframes pulso {
+            0% { opacity: 0.8; border-color: #1a7a9a; box-shadow: 0 0 10px #1a5a7a; }
+            50% { opacity: 1; border-color: #4afcff; box-shadow: 0 0 25px #2a9aff; color: #ffffff; }
+            100% { opacity: 0.8; border-color: #1a7a9a; box-shadow: 0 0 10px #1a5a7a; }
+        }
+
+        #progreso {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            color: #4afcff;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            z-index: 50;
+            display: none;
+            background: rgba(0, 10, 20, 0.8);
+            padding: 4px 8px;
+            border: 1px solid #1a7a9a;
+            text-shadow: 0 0 5px #1a7a9a;
+        }
+
+        #controles {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #4afcff;
+            font-size: 12px;
+            z-index: 50;
+            display: none;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, 0 0 10px #1a5a7a;
+            background: rgba(0, 5, 10, 0.6);
+            padding: 8px;
+            border-top: 1px solid #1a7a9a;
+            border-bottom: 1px solid #1a7a9a;
+            backdrop-filter: blur(2px);
+        }
+
+        #instruccion {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ffd966;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            z-index: 50;
+            display: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border: 1px solid #ffd966;
+            text-shadow: 0 0 5px #ffaa00;
+            animation: parpadeo 2s infinite;
+            border-radius: 0;
+        }
+
+        @keyframes parpadeo {
+            0% { opacity: 0.7; border-color: #ffd966; }
+            50% { opacity: 1; border-color: #ffaa00; box-shadow: 0 0 15px #ffaa00; }
+            100% { opacity: 0.7; border-color: #ffd966; }
+        }
+
+        @media (max-width: 768px) {
+            #startBtn {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+            #controles {
+                font-size: 10px;
+                padding: 6px;
+            }
+            #instruccion {
+                font-size: 12px;
+                padding: 6px 10px;
+                top: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="startBtn">⌧ INICIAR TRANSMISIÓN ⌧</button>
+    <div id="progreso">◉ 0%</div>
+    <div id="controles">⬅️ ➡️ MOVER ANIMACIÓN · ⬆️ ⬇️ NAVEGAR POEMA</div>
+    <div id="instruccion">⬆️⬇️ POEMA · ⬅️➡️ VIAJE</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // ====================================================
+        // VOYAGER · POEMA MEJORADO
+        // ====================================================
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const progresoDiv = document.getElementById('progreso');
+        const controlesDiv = document.getElementById('controles');
+        const instruccionDiv = document.getElementById('instruccion');
+        
+        ctx.imageSmoothingEnabled = false;
+        
+        // ====================================================
+        // VARIABLES
+        // ====================================================
+        let width, height;
+        let gameActive = false;
+        let animationFrame;
+        
+        // Progreso de la animación (movimiento horizontal)
+        let progresoAnimacion = 0;
+        let progresoAnimacionObjetivo = 0;
+        let velocidad = 0;
+        let velocidadSuave = 0;
+        
+        // Navegación del poema (índice actual)
+        let indicePoema = 0;
+        let poemaTerminado = false;
+        
+        const INERCIA = 0.01;
+        
+        // Control
+        let tocando = false;
+        let ultimaX = null;
+        let teclaIzquierda = false;
+        let teclaDerecha = false;
+        let teclaArriba = false;
+        let teclaAbajo = false;
+        let velocidadTeclado = 0;
+        
+        // Vibración
+        const vibrar = (p) => window.navigator?.vibrate?.(p);
+        
+        // Variable para la altura del cohete
+        let alturaCohete = 0;
+        
+        // ====================================================
+        // POEMA MEJORADO (exactamente como lo escribiste)
+        // ====================================================
+        const poema = [
+            "En el mundo entero",
+            "te reconozco entre la multitud,",
+            "como si tu nombre estuviera escrito en mi destino.",
+            "",
+            "Me encanta verte en cada enero,",
+            "porque el ciclo se renueva",
+            "aunque el cosmos cambie de forma,",
+            "vos seguís siendo la misma.",
+            "",
+            "Puedo despertarme, verte,",
+            "y sentir que tuve suerte.",
+            "Con los años nos hicimos más fuertes,",
+            "",
+            "encontrándonos incluso",
+            "después de la muerte,",
+            "como señales lanzadas al vacío,",
+            "esperando que nuestro propio universo las descifre.",
+            "",
+            "Sos mi raíz antigua,",
+            "mi memoria sumeria,",
+            "con vos todo está bien,",
+            "se borra mi miseria.",
+            "",
+            "Vivo para verte sonreír",
+            "y acompañarte en tu estadía por la Tierra.",
+            "",
+            "Estoy bendito de nacer en esta era",
+            "y recorrer el plano material con tu presencia.",
+            "",
+            "Tengo que morir,",
+            "aunque nací para vivir.",
+            "¿Dónde estás?",
+            "No siempre te puedo sentir.",
+            "",
+            "Viajar hasta las Pléyades",
+            "y traerte aquí,",
+            "perderme por el Universo",
+            "y encontrarte al fin."
+        ];
+        
+        // Número total de líneas del poema
+        const TOTAL_LINEAS = poema.length;
+        
+        // ====================================================
+        // PALETA DE COLORES
+        // ====================================================
+        const paletas = {
+            tierra: {
+                highlight: "#7df9ff",
+                mid: "#2a9ad9",
+                shadow: "#0a4a7a",
+                continente: "#8aff7a"
+            },
+            marte: {
+                highlight: "#ff9a5a",
+                mid: "#e64a2a",
+                shadow: "#8a1a0a",
+                crater: "#5a2a1a"
+            },
+            venus: {
+                highlight: "#fff27a",
+                mid: "#f7d42a",
+                shadow: "#b87a0a",
+                nube: "#ffea8a"
+            },
+            jupiter: {
+                highlight: "#ffb87a",
+                mid: "#d98a2a",
+                shadow: "#8a4a0a",
+                banda: "#b85a1a"
+            },
+            saturno: {
+                highlight: "#f0f0c0",
+                mid: "#c0c0a0",
+                shadow: "#808060",
+                anillo: "#d0d0b0"
+            },
+            neptuno: {
+                highlight: "#6ad0ff",
+                mid: "#2a7ad9",
+                shadow: "#0a3a7a",
+                tormenta: "#ffffff"
+            },
+            pluton: {
+                highlight: "#c0b0a0",
+                mid: "#8a7a6a",
+                shadow: "#4a3a2a",
+                craters: "#2a1a0a"
+            },
+            misterio: {
+                highlight: "#ff7aff",
+                mid: "#b84ad9",
+                shadow: "#4a1a7a",
+                nucleo: "#ffaaff"
+            }
+        };
+        
+        // ====================================================
+        // PLANETAS (aparecen según progreso de ANIMACIÓN)
+        // ====================================================
+        const planetas = [
+            {
+                x: 0.5, y: 0.5,
+                radius: 45,
+                tipo: 'tierra',
+                paleta: paletas.tierra,
+                inicio: 0.18,
+                fin: 0.30,
+                opacidad: 0
+            },
+            {
+                x: 0.4, y: 0.3,
+                radius: 35,
+                tipo: 'marte',
+                paleta: paletas.marte,
+                inicio: 0.25,
+                fin: 0.38,
+                opacidad: 0
+            },
+            {
+                x: 0.6, y: 0.7,
+                radius: 40,
+                tipo: 'venus',
+                paleta: paletas.venus,
+                inicio: 0.32,
+                fin: 0.45,
+                opacidad: 0
+            },
+            {
+                x: 0.35, y: 0.4,
+                radius: 50,
+                tipo: 'jupiter',
+                paleta: paletas.jupiter,
+                inicio: 0.40,
+                fin: 0.55,
+                opacidad: 0
+            },
+            {
+                x: 0.65, y: 0.6,
+                radius: 45,
+                tipo: 'saturno',
+                paleta: paletas.saturno,
+                inicio: 0.50,
+                fin: 0.65,
+                opacidad: 0
+            },
+            {
+                x: 0.45, y: 0.4,
+                radius: 38,
+                tipo: 'neptuno',
+                paleta: paletas.neptuno,
+                inicio: 0.60,
+                fin: 0.75,
+                opacidad: 0
+            },
+            {
+                x: 0.7, y: 0.5,
+                radius: 30,
+                tipo: 'pluton',
+                paleta: paletas.pluton,
+                inicio: 0.70,
+                fin: 0.82,
+                opacidad: 0
+            },
+            {
+                x: 0.5, y: 0.5,
+                radius: 42,
+                tipo: 'misterio',
+                paleta: paletas.misterio,
+                inicio: 0.80,
+                fin: 0.90,
+                opacidad: 0
+            }
+        ];
+        
+        // ====================================================
+        // ESTRELLAS
+        // ====================================================
+        const estrellas = [];
+        const CANTIDAD_ESTRELLAS = 2500;
+        
+        function generarEstrellas() {
+            for (let i = 0; i < CANTIDAD_ESTRELLAS; i++) {
+                estrellas.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    z: Math.random() * 2 + 0.2,
+                    color: Math.random() > 0.7 ? '#aaccff' : '#ffffff',
+                    brillo: Math.random() * 0.8 + 0.2,
+                    parpadeo: Math.random() * 0.02,
+                    offset: Math.random() * 100,
+                    
+                    florX: 0,
+                    florY: 0,
+                    enFlor: false
+                });
+            }
+            
+            // FLOR
+            const centroX = 0.5;
+            const centroY = 0.55;
+            
+            for (let i = 0; i < estrellas.length; i++) {
+                const tipo = Math.random();
+                
+                if (tipo < 0.45) {
+                    const petalo = Math.floor(Math.random() * 6);
+                    const angulo = (petalo / 6) * Math.PI * 2;
+                    const distancia = 0.09 + Math.random() * 0.06;
+                    const variacionAngulo = (Math.random() - 0.5) * 0.2;
+                    const anguloFinal = angulo + variacionAngulo;
+                    
+                    let x = centroX + Math.cos(anguloFinal) * distancia;
+                    let y = centroY - 0.05 + Math.sin(anguloFinal) * distancia * 0.8;
+                    
+                    estrellas[i].florX = x;
+                    estrellas[i].florY = y;
+                }
+                else if (tipo < 0.7) {
+                    const radio = Math.random() * 0.04;
+                    const angulo = Math.random() * Math.PI * 2;
+                    let x = centroX + Math.cos(angulo) * radio;
+                    let y = centroY - 0.05 + Math.sin(angulo) * radio;
+                    
+                    estrellas[i].florX = x;
+                    estrellas[i].florY = y;
+                }
+                else if (tipo < 0.85) {
+                    const talloY = centroY + 0.02 + Math.random() * 0.12;
+                    const talloX = centroX + (Math.random() - 0.5) * 0.02;
+                    
+                    estrellas[i].florX = talloX;
+                    estrellas[i].florY = talloY;
+                }
+                else {
+                    const lado = Math.random() > 0.5 ? 1 : -1;
+                    const hojaX = centroX + lado * (0.04 + Math.random() * 0.03);
+                    const hojaY = centroY + 0.05 + Math.random() * 0.04;
+                    
+                    estrellas[i].florX = hojaX;
+                    estrellas[i].florY = hojaY;
+                }
+            }
+        }
+        
+        // ====================================================
+        // NUBES
+        // ====================================================
+        function dibujarNubes() {
+            const centroX = width * 0.5;
+            const cieloBase = height * 0.3;
+            
+            const grad = ctx.createLinearGradient(0, 0, 0, height * 0.6);
+            grad.addColorStop(0, '#7ab0ff');
+            grad.addColorStop(0.7, '#4a7ab0');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, width, height * 0.6);
+            
+            ctx.fillStyle = '#2a5a2a';
+            ctx.fillRect(0, height * 0.6, width, height * 0.4);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.9;
+            
+            ctx.fillRect(centroX - 250, cieloBase - 30, 40, 20);
+            ctx.fillRect(centroX - 230, cieloBase - 40, 50, 25);
+            ctx.fillRect(centroX - 200, cieloBase - 30, 40, 20);
+            ctx.fillRect(centroX + 150, cieloBase - 50, 45, 20);
+            ctx.fillRect(centroX + 180, cieloBase - 60, 60, 30);
+            ctx.fillRect(centroX + 220, cieloBase - 50, 45, 20);
+            ctx.fillRect(centroX - 80, cieloBase - 90, 35, 15);
+            ctx.fillRect(centroX - 60, cieloBase - 100, 50, 25);
+            ctx.fillRect(centroX - 30, cieloBase - 90, 35, 15);
+            
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(centroX - 300, cieloBase - 20, 30, 12);
+            ctx.fillRect(centroX + 250, cieloBase - 40, 30, 12);
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // ====================================================
+        // ESCENA DEL COHETE
+        // ====================================================
+        function dibujarEscenaCohete() {
+            const centroX = width * 0.5;
+            const sueloY = height * 0.6;
+            
+            if (progresoAnimacion >= 0.05 && progresoAnimacion < 0.18) {
+                alturaCohete = (progresoAnimacion - 0.05) * 800;
+            } else if (progresoAnimacion >= 0.18) {
+                alturaCohete = 150;
+            } else {
+                alturaCohete = 0;
+            }
+            
+            dibujarNubes();
+            
+            ctx.fillStyle = '#4a6a8a';
+            ctx.fillRect(centroX - 100, sueloY - 20, 200, 30);
+            
+            ctx.fillStyle = '#5a7a9a';
+            ctx.fillRect(centroX - 60, sueloY - 120, 15, 100);
+            ctx.fillRect(centroX + 45, sueloY - 120, 15, 100);
+            
+            const coheteY = sueloY - 180 - alturaCohete;
+            
+            if (coheteY + 140 > 0) {
+                ctx.fillStyle = '#e0e0e0';
+                ctx.fillRect(centroX - 30, coheteY, 60, 140);
+                
+                ctx.fillStyle = '#4afcff';
+                ctx.fillRect(centroX - 8, coheteY + 50, 16, 16);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(centroX - 4, coheteY + 54, 4, 4);
+                
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(centroX - 50, coheteY + 70, 20, 30);
+                ctx.fillRect(centroX + 30, coheteY + 70, 20, 30);
+                
+                if (progresoAnimacion > 0.08 && progresoAnimacion < 0.18) {
+                    ctx.fillStyle = '#ff9a2a';
+                    ctx.fillRect(centroX - 20, coheteY + 140, 12, 30);
+                    ctx.fillRect(centroX + 8, coheteY + 140, 12, 30);
+                    ctx.fillStyle = '#ffea2a';
+                    ctx.fillRect(centroX - 15, coheteY + 150, 8, 25);
+                    ctx.fillRect(centroX + 7, coheteY + 150, 8, 25);
+                }
+                
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(centroX - 5, coheteY + 30, 10, 5);
+            }
+        }
+        
+        // ====================================================
+        // DIBUJAR ESTRELLAS
+        // ====================================================
+        function dibujarEstrellas() {
+            const esFinal = progresoAnimacion > 0.85;
+            const factorFlor = esFinal ? Math.min(1, (progresoAnimacion - 0.85) * 5) : 0;
+            
+            for (let estrella of estrellas) {
+                if (!esFinal || factorFlor < 0.1) {
+                    const velocidadEstrella = estrella.z * 0.8;
+                    const desplazamientoBase = (progresoAnimacion * 2000 * velocidadEstrella) % width;
+                    
+                    let x = (width * estrella.x + desplazamientoBase) % width;
+                    let y = height * estrella.y;
+                    
+                    const brillo = estrella.brillo * (0.6 + 0.4 * Math.sin(Date.now() * estrella.parpadeo + estrella.offset));
+                    
+                    if (velocidadSuave > 0.7 && progresoAnimacion < 0.8) {
+                        ctx.strokeStyle = `rgba(100, 180, 255, ${brillo * 0.4})`;
+                        ctx.lineWidth = estrella.z;
+                        ctx.beginPath();
+                        ctx.moveTo(x - velocidadSuave * 25, y);
+                        ctx.lineTo(x + velocidadSuave * 25, y);
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = estrella.color;
+                        ctx.globalAlpha = brillo;
+                        ctx.fillRect(x, y, estrella.z, estrella.z);
+                    }
+                }
+                
+                if (factorFlor > 0) {
+                    const xActual = width * estrella.x;
+                    const yActual = height * estrella.y;
+                    
+                    const xFlor = width * estrella.florX;
+                    const yFlor = height * estrella.florY;
+                    
+                    const velocidadEstrella = estrella.z * 0.3;
+                    const desplazamientoExtra = (progresoAnimacion * 200 * velocidadEstrella * (1 - factorFlor)) % width;
+                    
+                    let x = (xActual * (1 - factorFlor) + xFlor * factorFlor + desplazamientoExtra) % width;
+                    let y = yActual * (1 - factorFlor) + yFlor * factorFlor;
+                    
+                    let color = estrella.color;
+                    if (factorFlor > 0.3) {
+                        if (Math.random() > 0.8) color = '#ffd700';
+                        else if (Math.random() > 0.7) color = '#ffaaff';
+                        else color = '#ffffff';
+                    }
+                    
+                    const brillo = estrella.brillo * (0.7 + 0.3 * Math.sin(Date.now() * estrella.parpadeo + estrella.offset));
+                    
+                    ctx.fillStyle = color;
+                    ctx.globalAlpha = brillo * (0.6 + factorFlor * 0.4);
+                    ctx.fillRect(x, y, estrella.z * 1.3, estrella.z * 1.3);
+                    
+                    estrella.enFlor = true;
+                }
+            }
+            
+            // Texto "ich liebe dich"
+            if (progresoAnimacion > 0.94) {
+                const opacidadTexto = Math.min(1, (progresoAnimacion - 0.94) * 20);
+                ctx.globalAlpha = opacidadTexto;
+                
+                ctx.fillStyle = '#ff7a9a';
+                ctx.font = '28px \'Courier New\', monospace';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#ff3a5a';
+                ctx.shadowBlur = 20;
+                ctx.fillText('ich liebe dich', width * 0.5, height * 0.8);
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // ====================================================
+        // FUNCIÓN PARA DIBUJAR PLANETAS
+        // ====================================================
+        function dibujarPlanetaPixel(ctx, x, y, radius, paleta, tipo, opacidad) {
+            ctx.globalAlpha = opacidad;
+            const pixelSize = 3;
+            
+            for (let py = -radius; py <= radius; py += pixelSize) {
+                for (let px = -radius; px <= radius; px += pixelSize) {
+                    
+                    let distance = Math.sqrt(px*px + py*py);
+                    
+                    if (distance <= radius) {
+                        
+                        let light = (-px * 0.7 - py * 0.5) / (radius * 1.3);
+                        
+                        let color;
+                        
+                        if (light > 0.25) {
+                            color = paleta.highlight;
+                        } else if (light > -0.2) {
+                            color = paleta.mid;
+                        } else {
+                            color = paleta.shadow;
+                        }
+                        
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x + px - 1, y + py - 1, pixelSize, pixelSize);
+                    }
+                }
+            }
+            
+            switch(tipo) {
+                case 'tierra':
+                    ctx.fillStyle = paleta.continente;
+                    for (let i = 0; i < 10; i++) {
+                        let cx = x - radius/2 + Math.random() * radius;
+                        let cy = y - radius/3 + Math.random() * radius * 0.8;
+                        for (let dx = -4; dx <= 4; dx += 2) {
+                            for (let dy = -4; dy <= 4; dy += 2) {
+                                if (Math.random() > 0.6) {
+                                    ctx.fillRect(cx + dx, cy + dy, 2, 2);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'marte':
+                    ctx.fillStyle = paleta.crater;
+                    for (let i = 0; i < 15; i++) {
+                        let cx = x - radius/2 + Math.random() * radius;
+                        let cy = y - radius/2 + Math.random() * radius;
+                        ctx.fillRect(cx, cy, 3, 3);
+                        ctx.fillStyle = paleta.shadow;
+                        ctx.fillRect(cx-2, cy-1, 2, 2);
+                        ctx.fillStyle = paleta.crater;
+                    }
+                    break;
+                    
+                case 'jupiter':
+                    ctx.fillStyle = paleta.banda;
+                    for (let stripe = -radius + 8; stripe <= radius; stripe += 10) {
+                        for (let bx = -radius; bx <= radius; bx += 3) {
+                            if (Math.random() > 0.4) {
+                                ctx.fillRect(x + bx, y + stripe, 3, 5);
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'saturno':
+                    ctx.strokeStyle = paleta.anillo;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, radius + 18, radius/3.5, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.strokeStyle = paleta.highlight;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, radius + 22, radius/4, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+                    
+                case 'neptuno':
+                    ctx.fillStyle = paleta.tormenta;
+                    ctx.fillRect(x - radius/3, y - radius/4, 6, 6);
+                    ctx.fillStyle = paleta.highlight;
+                    ctx.fillRect(x - radius/3 + 2, y - radius/4 - 2, 4, 4);
+                    break;
+                    
+                case 'misterio':
+                    ctx.fillStyle = paleta.nucleo;
+                    for (let i = 0; i < 8; i++) {
+                        let cx = x - 5 + Math.random() * 10;
+                        let cy = y - 5 + Math.random() * 10;
+                        ctx.fillRect(cx, cy, 3, 3);
+                    }
+                    break;
+            }
+            
+            ctx.fillStyle = paleta.highlight;
+            ctx.globalAlpha = opacidad * 0.3;
+            ctx.fillRect(x - radius/2, y - radius/2, 8, 8);
+            ctx.globalAlpha = 1;
+        }
+        
+        // ====================================================
+        // NAVE
+        // ====================================================
+        function dibujarVoyager() {
+            const factorAlejamiento = progresoAnimacion > 0.7 ? Math.min(1, (progresoAnimacion - 0.7) * 3.5) : 0;
+            
+            const baseX = width * 0.15;
+            const baseY = height * 0.5 + Math.sin(Date.now() * 0.003) * 3;
+            
+            const centroX = width * 0.5;
+            const centroY = height * 0.55;
+            
+            const naveX = baseX * (1 - factorAlejamiento) + centroX * factorAlejamiento;
+            const naveY = baseY * (1 - factorAlejamiento) + centroY * factorAlejamiento;
+            
+            const tamanoBase = 12;
+            const tamanoFinal = 2;
+            const tamano = tamanoBase * (1 - factorAlejamiento) + tamanoFinal * factorAlejamiento;
+            
+            if (velocidadSuave > 0.6 && progresoAnimacion < 0.8 && factorAlejamiento < 0.5) {
+                for (let i = 1; i <= 6; i++) {
+                    ctx.fillStyle = `rgba(74, 252, 255, ${0.2 / i * (1 - factorAlejamiento)})`;
+                    ctx.fillRect(
+                        naveX - (i * velocidadSuave * 5) - tamano/2,
+                        naveY - tamano/2,
+                        tamano,
+                        tamano
+                    );
+                }
+            }
+            
+            ctx.fillStyle = '#ffd966';
+            ctx.shadowColor = '#4afcff';
+            ctx.shadowBlur = factorAlejamiento < 0.8 ? 10 : 2;
+            ctx.fillRect(naveX - tamano/2, naveY - tamano/2, tamano, tamano);
+            
+            if (tamano > 4) {
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 5;
+                ctx.fillRect(naveX - 3, naveY - 3, 4, 4);
+                
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillRect(naveX + 6, naveY - 6, 8, 2);
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        // ====================================================
+        // POEMA NAVEGABLE (controlado por teclas arriba/abajo)
+        // ====================================================
+        function dibujarPoema() {
+            if (indicePoema < 0) indicePoema = 0;
+            
+            // Mostrar 8 líneas alrededor del índice actual
+            const lineasVisibles = 10;
+            const inicio = Math.max(0, Math.min(indicePoema - 4, TOTAL_LINEAS - lineasVisibles));
+            
+            const anchoMarco = 360;
+            const altoMarco = lineasVisibles * 22 + 45;
+            
+            // Fondo del poema
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillRect(10, 10, anchoMarco, altoMarco);
+            
+            // Borde brillante
+            ctx.strokeStyle = '#4afcff';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(10, 10, anchoMarco, altoMarco);
+            
+            // Título y navegación
+            ctx.font = '11px \'Courier New\', monospace';
+            ctx.fillStyle = '#ffd966';
+            ctx.textAlign = 'left';
+            ctx.fillText('✦ VOYAGER ✦', 18, 28);
+            
+            ctx.textAlign = 'right';
+            ctx.fillText(`${indicePoema + 1}/${TOTAL_LINEAS}`, anchoMarco - 10, 28);
+            
+            // Línea separadora
+            ctx.fillStyle = '#1a7a9a';
+            ctx.fillRect(15, 35, anchoMarco - 10, 1);
+            
+            // Versos del poema
+            ctx.font = '13px \'Courier New\', monospace';
+            ctx.textAlign = 'left';
+            ctx.shadowColor = '#1a7a9a';
+            ctx.shadowBlur = 3;
+            
+            for (let i = 0; i < lineasVisibles; i++) {
+                const idx = inicio + i;
+                if (idx < poema.length) {
+                    // Resaltar la línea actual
+                    if (idx === indicePoema) {
+                        ctx.fillStyle = '#ffd966';
+                        ctx.font = 'bold 14px \'Courier New\', monospace';
+                    } else if (poema[idx] === "") {
+                        ctx.fillStyle = '#4a6a8a';
+                        ctx.font = '13px \'Courier New\', monospace';
+                    } else {
+                        ctx.fillStyle = '#7df9ff';
+                        ctx.font = '13px \'Courier New\', monospace';
+                    }
+                    
+                    let yPos = 55 + i * 22;
+                    // Indicador de línea actual
+                    if (idx === indicePoema) {
+                        ctx.fillText('→ ' + poema[idx], 18, yPos);
+                    } else {
+                        ctx.fillText('  ' + poema[idx], 18, yPos);
+                    }
+                }
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.font = '13px \'Courier New\', monospace';
+        }
+        
+        // ====================================================
+        // ACTUALIZAR PLANETAS (según progreso de ANIMACIÓN)
+        // ====================================================
+        function actualizarPlanetas() {
+            for (let p of planetas) {
+                if (progresoAnimacion >= p.inicio && progresoAnimacion <= p.fin) {
+                    p.opacidad = Math.min(1, p.opacidad + 0.01);
+                } else {
+                    p.opacidad = Math.max(0, p.opacidad - 0.01);
+                }
+            }
+        }
+        
+        // ====================================================
+        // OSCURECIMIENTO FINAL
+        // ====================================================
+        function dibujarOscuridad() {
+            if (progresoAnimacion > 0.75) {
+                const osc = Math.min(0.8, (progresoAnimacion - 0.75) * 4);
+                
+                const grad = ctx.createRadialGradient(
+                    width * 0.2, height * 0.5, width * 0.1,
+                    width * 0.2, height * 0.5, width
+                );
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, `rgba(0,0,0,${osc})`);
+                
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            }
+        }
+        
+        // ====================================================
+        // CONTROLES
+        // ====================================================
+        function onTouchStart(e) {
+            e.preventDefault();
+            if (!gameActive) return;
+            tocando = true;
+            ultimaX = e.touches[0].clientX;
+        }
+        
+        function onTouchMove(e) {
+            e.preventDefault();
+            if (!gameActive || !tocando || ultimaX === null) return;
+            
+            const xActual = e.touches[0].clientX;
+            const deltaX = xActual - ultimaX;
+            
+            velocidad = deltaX / width * 15;
+            progresoAnimacionObjetivo += velocidad * 0.0006;
+            progresoAnimacionObjetivo = Math.min(1, Math.max(0, progresoAnimacionObjetivo));
+            
+            ultimaX = xActual;
+        }
+        
+        function onTouchEnd(e) {
+            e.preventDefault();
+            tocando = false;
+            ultimaX = null;
+        }
+        
+        function onKeyDown(e) {
+            if (!gameActive) return;
+            
+            // Prevenir scroll
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+            
+            // CONTROLES DE ANIMACIÓN (izquierda/derecha)
+            if (e.key === 'ArrowLeft') {
+                teclaIzquierda = true;
+            } else if (e.key === 'ArrowRight') {
+                teclaDerecha = true;
+            } 
+            // CONTROLES DE POEMA (arriba/abajo)
+            else if (e.key === 'ArrowUp') {
+                if (indicePoema > 0) {
+                    indicePoema--;
+                    vibrar(10);
+                }
+            } else if (e.key === 'ArrowDown') {
+                if (indicePoema < TOTAL_LINEAS - 1) {
+                    indicePoema++;
+                    vibrar(10);
+                }
+            }
+        }
+        
+        function onKeyUp(e) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                teclaIzquierda = false;
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                teclaDerecha = false;
+            }
+        }
+        
+        function actualizarTeclado() {
+            // Control de la ANIMACIÓN con izquierda/derecha
+            if (teclaDerecha && !teclaIzquierda) {
+                velocidadTeclado = Math.min(2.2, velocidadTeclado + 0.05);
+            } else if (teclaIzquierda && !teclaDerecha) {
+                velocidadTeclado = Math.max(-2.2, velocidadTeclado - 0.05);
+            } else {
+                velocidadTeclado *= 0.92;
+            }
+            
+            if (Math.abs(velocidadTeclado) > 0.05) {
+                progresoAnimacionObjetivo += velocidadTeclado * 0.0008;
+                progresoAnimacionObjetivo = Math.min(1, Math.max(0, progresoAnimacionObjetivo));
+                velocidad = velocidadTeclado;
+            }
+        }
+        
+        // ====================================================
+        // RESIZE
+        // ====================================================
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        
+        // ====================================================
+        // LOOP PRINCIPAL
+        // ====================================================
+        function loop() {
+            if (!gameActive) return;
+            
+            actualizarTeclado();
+            
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            
+            if (!tocando && !teclaDerecha && !teclaIzquierda) {
+                velocidad *= 0.95;
+            }
+            
+            velocidadSuave = velocidadSuave * 0.94 + Math.abs(velocidad) * 0.06;
+            
+            progresoAnimacion += (progresoAnimacionObjetivo - progresoAnimacion) * INERCIA;
+            
+            if (!tocando && !teclaDerecha && !teclaIzquierda && Math.abs(velocidad) < 0.1) {
+                progresoAnimacionObjetivo += 0.00002;
+                progresoAnimacionObjetivo = Math.min(1, progresoAnimacionObjetivo);
+            }
+            
+            progresoDiv.textContent = `◉ ${Math.floor(progresoAnimacion * 100)}%`;
+            
+            // ACTUALIZAR PLANETAS (según progreso de animación)
+            actualizarPlanetas();
+            
+            // ESCENAS
+            if (progresoAnimacion < 0.18) {
+                dibujarEscenaCohete();
+            } else {
+                dibujarEstrellas();
+                
+                // DIBUJAR PLANETAS
+                for (let p of planetas) {
+                    if (p.opacidad > 0.01) {
+                        dibujarPlanetaPixel(ctx, width * p.x, height * p.y, p.radius, p.paleta, p.tipo, p.opacidad);
+                    }
+                }
+                
+                dibujarVoyager();
+            }
+            
+            // POEMA NAVEGABLE
+            dibujarPoema();
+            
+            dibujarOscuridad();
+            
+            animationFrame = requestAnimationFrame(loop);
+        }
+        
+        // ====================================================
+        // INICIAR
+        // ====================================================
+        function iniciar() {
+            gameActive = true;
+            progresoAnimacion = 0;
+            progresoAnimacionObjetivo = 0;
+            velocidad = 0;
+            velocidadSuave = 0;
+            alturaCohete = 0;
+            indicePoema = 0;
+            
+            generarEstrellas();
+            
+            startBtn.style.display = 'none';
+            progresoDiv.style.display = 'block';
+            controlesDiv.style.display = 'block';
+            instruccionDiv.style.display = 'block';
+            
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            }
+            
+            vibrar(30);
+            resizeCanvas();
+            loop();
+        }
+        
+        // ====================================================
+        // EVENTOS
+        // ====================================================
+        startBtn.addEventListener('click', iniciar);
+        
+        canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+        canvas.addEventListener('touchend', onTouchEnd);
+        canvas.addEventListener('touchcancel', onTouchEnd);
+        
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        
+        document.body.addEventListener('touchmove', (e) => {
+            if (gameActive) e.preventDefault();
+        }, { passive: false });
+        
+        resizeCanvas();
+    </script>
+</body>
+</html>
